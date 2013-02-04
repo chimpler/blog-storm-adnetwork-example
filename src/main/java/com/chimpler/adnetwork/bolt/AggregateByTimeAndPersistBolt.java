@@ -1,9 +1,5 @@
 package com.chimpler.adnetwork.bolt;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,11 +19,8 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 
 public class AggregateByTimeAndPersistBolt implements IRichBolt {
-	private OutputCollector collector;
 	private Map<Integer, Accumulator> accumulators;
-	private String name;
 	private int aggregationTime;
-	private int id;
 	private Mongo mongo;
 	private DBCollection collection;
 
@@ -39,9 +32,6 @@ public class AggregateByTimeAndPersistBolt implements IRichBolt {
 	public void prepare(Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		this.accumulators = new HashMap<Integer, Accumulator>();
-		this.collector = collector;
-		this.name = context.getThisComponentId();
-		this.id = context.getThisTaskId();
 		try {
 			mongo = new Mongo("localhost", 27017);
 		} catch (UnknownHostException e) {
@@ -100,7 +90,6 @@ public class AggregateByTimeAndPersistBolt implements IRichBolt {
 	public void cleanup() {
 		mongo.close();
 		for (int publisherId: accumulators.keySet()) {
-			System.out.println("============> persisting " + publisherId);
 			persistLastSlice(publisherId);
 		}
 	}
