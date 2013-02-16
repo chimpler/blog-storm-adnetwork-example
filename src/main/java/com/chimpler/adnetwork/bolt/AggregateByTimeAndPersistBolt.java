@@ -45,12 +45,12 @@ public class AggregateByTimeAndPersistBolt implements IRichBolt {
 
 	@Override
 	public void execute(Tuple input) {
-		int timestamp = input.getIntegerByField("timestamp");
+		long timestamp = input.getLongByField("timestamp");
 		int publisherId = input.getIntegerByField("publisher_id");
 		int cookieId = input.getIntegerByField("cookie_id");
 		
 		// round time by aggregationTime
-		int timestampSlice = (timestamp / aggregationTime) * aggregationTime;
+		long timestampSlice = (timestamp / aggregationTime) * aggregationTime;
 
 		Accumulator accumulator = accumulators.get(publisherId);
 		if (accumulator == null) {
@@ -58,7 +58,7 @@ public class AggregateByTimeAndPersistBolt implements IRichBolt {
 			accumulators.put(publisherId, accumulator);
 		} else {
 			// if we receive a new tuple that has a timestamp in another time slice, persist previous data
-			int lastTimestampSlice = accumulator.getLastTimestamp();
+			long lastTimestampSlice = accumulator.getLastTimestamp();
 					
 			if (lastTimestampSlice != timestampSlice) {
 				persistLastSlice(publisherId);
@@ -72,7 +72,7 @@ public class AggregateByTimeAndPersistBolt implements IRichBolt {
 		Accumulator accumulator = accumulators.get(publisherId);
 
 		DBObject obj = new BasicDBObject();
-		int timestamp = accumulator.getLastTimestamp();  
+		long timestamp = accumulator.getLastTimestamp();  
 		int count = accumulator.getCounter();
 		int uniques = accumulator.getCookies().size();
 
@@ -108,14 +108,14 @@ public class AggregateByTimeAndPersistBolt implements IRichBolt {
 	public class Accumulator {
 		private int counter;
 		private Set<Integer> cookies;
-		private int lastTimestamp;
+		private long lastTimestamp;
 		
 		public Accumulator() {
 			this.counter = 0;
 			this.cookies = new HashSet<Integer>();
 		}
 		
-		public void add(int cookieId, int lastTimestamp) {
+		public void add(int cookieId, long lastTimestamp) {
 			counter++;
 			cookies.add(cookieId);
 			this.lastTimestamp = lastTimestamp;
@@ -137,7 +137,7 @@ public class AggregateByTimeAndPersistBolt implements IRichBolt {
 			this.cookies = cookies;
 		}
 
-		public int getLastTimestamp() {
+		public long getLastTimestamp() {
 			return lastTimestamp;
 		}
 
